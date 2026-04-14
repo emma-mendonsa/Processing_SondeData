@@ -1,0 +1,137 @@
+---
+title: "Monthly Data Imports"
+author: "E. Mendonsa"
+date: "2026-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Packages
+```{r message=FALSE}
+
+library(tidyverse)
+library(data.table)
+library(readr)
+library(readxl)
+
+```
+
+
+Import monthly datasets and Combine into a List. Then Combine into Singular dataframe
+```{r}
+
+# -------- CONFIGURATION --------
+folder_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Arnold"  # Change to your folder path
+
+# -------- VALIDATION --------
+if (!dir.exists(folder_path)) {
+  stop("The specified folder does not exist: ", folder_path)
+}
+
+# List all .xlsx files (excluding temporary Excel files starting with ~)
+xlsx_files <- list.files(
+  path = folder_path,
+  pattern = "\\.xlsx$",
+  full.names = TRUE
+)
+xlsx_files <- xlsx_files[!grepl("^~\\$", basename(xlsx_files))]
+
+if (length(xlsx_files) == 0) {
+  stop("No .xlsx files found in the folder: ", folder_path)
+}
+
+# -------- IMPORT FUNCTION --------
+read_excel_safe <- function(file) {
+  tryCatch({
+    message("Reading: ", basename(file))
+    # Skip first 8 rows
+    read_excel(file, skip = 8)
+  }, error = function(e) {
+    warning("Failed to read file: ", file, " — ", e$message)
+    NULL
+  })
+}
+
+# -------- BATCH IMPORT --------
+data_list <- lapply(xlsx_files, read_excel_safe)
+
+# Remove NULLs from failed reads
+data_list_2 <- Filter(Negate(is.null), data_list)
+
+# Combine into one data frame (use bind_rows to handle different columns)
+if (length(data_list) > 0) {
+  if (!requireNamespace("dplyr", quietly = TRUE)) {
+    install.packages("dplyr")
+  }
+  library(dplyr)
+  combined_data <- bind_rows(data_list)
+  message("Successfully imported ", nrow(combined_data), " rows from ", length(data_list), " files.")
+} else {
+  stop("No valid data imported.")
+}
+
+# -------- OUTPUT --------
+#print(head(combined_data))
+
+
+##Emma add as double check. Should match "combined_data" ##
+AllSites <- data_list %>% 
+  reduce(full_join) 
+
+```
+
+
+Dataframe
+```{r}
+
+#Create new dataframe for updates
+SiteData <- combined_data
+
+#Review column names. Determine which are repetitive, etc
+colnames(SiteData)
+
+#Combine columns that are repetitive. Typically chlorophyll and TAL
+SiteData <- SiteData %>% 
+  mutate(`Chlorophyll ug/L` = coalesce(`Chlorophyll ug/L`,`Chlorophyll µg/L`)) %>% #Create combined Chl ug/L column
+  mutate(`TAL PC ug/L` = coalesce(`TAL PC ug/L`,`TAL PC µg/L`)) %>% #Create combined TAL ug/L column
+  mutate(depthFt_m = `Depth ft`*0.3048) %>% #Convert depth from feet to meters, if needed
+  mutate(`Depth m` = coalesce(`Depth m`,depthFt_m)) #Create combined Depth m column
+
+#Convert Site column to Factors. Use as filter, if needed
+SiteData$`Site Name`<- as.factor(SiteData$`Site Name`)
+#If more than one factor, review and adjust. Possibly run the next line: 
+SiteData$`Site Name`<- "Arnold"
+
+#Drop unnecessary columns
+SiteData <- SiteData %>% 
+  select(`Date (MM/DD/YYYY)`,`Time (HH:mm:ss)`,`Site Name`,
+         `Depth m`,
+         `Temp °C`,`SpCond µS/cm`,
+         `ODO % sat`,`ODO mg/L`,
+         `Turbidity FNU`,
+          pH,`pH mV`,
+         `Chlorophyll RFU`,`Chlorophyll ug/L`,
+         `TAL PC RFU`,`TAL PC ug/L`,
+         `fDOM QSU`,`fDOM RFU`,
+         `Battery V`)
+
+#Compare column names
+colnames(combined_data)
+colnames(SiteData)
+
+
+```
+
+
+
+Save as Rdata and Excel
+```{r}
+
+write.csv(SiteData, file = "siteData/Arnold_combo_raw.csv",row.names = FALSE)
+
+
+```
+
