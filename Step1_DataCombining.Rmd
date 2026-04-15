@@ -130,7 +130,7 @@ colnames(SiteData)
 Save as Rdata and Excel
 ```{r}
 
-write.csv(SiteData, file = "siteData/Arnold_combo_raw.csv",row.names = FALSE)
+#write.csv(SiteData, file = "siteData/Arnold_combo_raw.csv",row.names = FALSE)
 
 
 ```
