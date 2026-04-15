@@ -1,0 +1,33 @@
+---
+title: "Step2_DataClipping"
+author: "E. Mendonsa"
+date: "2026-04-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Packages
+```{r message=FALSE}
+
+library(tidyverse)
+library(data.table)
+library(readr)
+library(readxl)
+
+```
+
+
+Import site visit log (dates and times)
+```{r}
+
+span <- read_excel("span.xlsx")
+
+
+```
+
+
+
