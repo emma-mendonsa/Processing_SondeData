@@ -17,6 +17,8 @@ library(data.table)
 library(readr)
 library(readxl)
 
+siteName <- "Arnold"
+
 ```
 
 
@@ -90,6 +92,15 @@ Dataframe
 #Create new dataframe for updates
 SiteData <- combined_data
 
+#Review and adjust column formatting
+SiteData$`Time (HH:mm:ss)` = hms::as_hms(SiteData$`Time (HH:mm:ss)`) #Update Time column format
+#SiteData$`Site Name`<- siteName  #If more than one, review and adjust in excels. Possibly run this line
+
+#Add DateTime column
+SiteData <- SiteData %>%
+                      mutate(DateTime = as.POSIXct(paste(`Date (MM/DD/YYYY)`, `Time (HH:mm:ss)`), 
+                                                   format = "%Y-%m-%d %H:%M:%S"))
+
 #Review column names. Determine which are repetitive, etc
 colnames(SiteData)
 
@@ -100,14 +111,11 @@ SiteData <- SiteData %>%
   mutate(depthFt_m = `Depth ft`*0.3048) %>% #Convert depth from feet to meters, if needed
   mutate(`Depth m` = coalesce(`Depth m`,depthFt_m)) #Create combined Depth m column
 
-#Convert Site column to Factors. Use as filter, if needed
-SiteData$`Site Name`<- as.factor(SiteData$`Site Name`)
-#If more than one factor, review and adjust. Possibly run the next line: 
-SiteData$`Site Name`<- "Arnold"
+
 
 #Drop unnecessary columns
 SiteData <- SiteData %>% 
-  select(`Date (MM/DD/YYYY)`,`Time (HH:mm:ss)`,`Site Name`,
+  select(`Date (MM/DD/YYYY)`,`Time (HH:mm:ss)`,DateTime, `Site Name`,
          `Depth m`,
          `Temp °C`,`SpCond µS/cm`,
          `ODO % sat`,`ODO mg/L`,
@@ -131,7 +139,7 @@ Save as Rdata and Excel
 ```{r}
 
 #write.csv(SiteData, file = "siteData/Arnold_combo_raw.csv",row.names = FALSE)
-
+write_rds(SiteData, file = paste("siteData/",siteName,"_combo_raw.rds",sep=""))
 
 ```
 
