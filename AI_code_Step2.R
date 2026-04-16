@@ -25,6 +25,9 @@ Option 2 — dplyr + lubridate (clearer, simpler for smaller data)
 library(dplyr)
 library(lubridate)
 
+df <- df %>%
+  mutate(datetime = as.POSIXct(paste(`Date (MM/DD/YYYY)`, `Time (HH:mm:ss)`), format = "%Y-%m-%d %H:%M:%S"))
+
 df <- df %>% mutate(datetime = as_datetime(datetime, tz = "UTC"))
 spans <- spans %>% mutate(start = as_datetime(start, tz = "UTC"),
                           stop  = as_datetime(stop,  tz = "UTC"))

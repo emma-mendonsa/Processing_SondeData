@@ -10,24 +10,55 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-Packages
+Packages and Site Name Set Up
 ```{r message=FALSE}
 
 library(tidyverse)
 library(data.table)
 library(readr)
 library(readxl)
+library(dplyr)
+library(lubridate)
+
+
+siteName <- "Arnold"
 
 ```
 
 
-Import site visit log (dates and times)
+Import Site Data and Site visit log (dates and times)
 ```{r}
 
-span <- read_excel("span.xlsx")
+SiteData <- read_rds(file = paste("siteData/",siteName,"_combo_raw.rds",sep=""))
+spans <- read_excel("span.xlsx")
 
 
 ```
 
 
+Remove timestamps where sonde is "in air"
+```{r}
+
+
+#SiteData_clipped <- SiteData %>%
+#  mutate(datetime = as.POSIXct(paste(`Date (MM/DD/YYYY)`, `Time (HH:mm:ss)`), format = "%Y-%m-%d %H:%M:%S"))
+
+# for each row, test if datetime falls in any span and then remove
+SiteData_clipped <- SiteData %>%
+  rowwise() %>%
+  mutate(in_span = any(DateTime >= spans$start & DateTime <= spans$stop)) %>%
+  ungroup() %>%
+  filter(!in_span) %>%
+  select(-in_span)
+
+```
+
+
+Save as Rdata and Excel
+```{r}
+
+write.csv(SiteData_clipped, file = paste("siteData/",siteName,"_combo_clipped.csv",sep=""),row.names = FALSE)
+write_rds(SiteData_clipped, file = paste("siteData/",siteName,"_combo_clipped.rds",sep=""))
+
+```
 
