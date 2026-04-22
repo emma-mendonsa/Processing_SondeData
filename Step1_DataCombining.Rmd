@@ -16,130 +16,73 @@ library(tidyverse)
 library(data.table)
 library(readr)
 library(readxl)
+library(purrr)
 
 siteName <- "Arnold"
 
-```
-
-
-Import monthly datasets and Combine into a List. Then Combine into Singular dataframe
-```{r}
-
-# -------- CONFIGURATION --------
-folder_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Arnold"  # Change to your folder path
-
-# -------- VALIDATION --------
-if (!dir.exists(folder_path)) {
-  stop("The specified folder does not exist: ", folder_path)
-}
-
-# List all .xlsx files (excluding temporary Excel files starting with ~)
-xlsx_files <- list.files(
-  path = folder_path,
-  pattern = "\\.xlsx$",
-  full.names = TRUE
-)
-xlsx_files <- xlsx_files[!grepl("^~\\$", basename(xlsx_files))]
-
-if (length(xlsx_files) == 0) {
-  stop("No .xlsx files found in the folder: ", folder_path)
-}
-
-# -------- IMPORT FUNCTION --------
-read_excel_safe <- function(file) {
-  tryCatch({
-    message("Reading: ", basename(file))
-    # Skip first 8 rows
-    read_excel(file, skip = 8)
-  }, error = function(e) {
-    warning("Failed to read file: ", file, " — ", e$message)
-    NULL
-  })
-}
-
-# -------- BATCH IMPORT --------
-data_list <- lapply(xlsx_files, read_excel_safe)
-
-# Remove NULLs from failed reads
-data_list_2 <- Filter(Negate(is.null), data_list)
-
-# Combine into one data frame (use bind_rows to handle different columns)
-if (length(data_list) > 0) {
-  if (!requireNamespace("dplyr", quietly = TRUE)) {
-    install.packages("dplyr")
-  }
-  library(dplyr)
-  combined_data <- bind_rows(data_list)
-  message("Successfully imported ", nrow(combined_data), " rows from ", length(data_list), " files.")
-} else {
-  stop("No valid data imported.")
-}
-
-# -------- OUTPUT --------
-#print(head(combined_data))
-
-
-##Emma add as double check. Should match "combined_data" ##
-AllSites <- data_list %>% 
-  reduce(full_join) 
+monthlyData_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Arnold" 
 
 ```
 
 
-Dataframe
+Step 1: Import monthly datasets and Combine into a List. 
 ```{r}
 
-#Create new dataframe for updates
-SiteData <- combined_data
+#Run R script: Step1_CreateList_MonthlyData
 
-#Review and adjust column formatting
-SiteData$`Time (HH:mm:ss)` = hms::as_hms(SiteData$`Time (HH:mm:ss)`) #Update Time column format
-#SiteData$`Site Name`<- siteName  #If more than one, review and adjust in excels. Possibly run this line
-
-#Add DateTime column
-SiteData <- SiteData %>%
-                      mutate(DateTime = as.POSIXct(paste(`Date (MM/DD/YYYY)`, `Time (HH:mm:ss)`), 
-                                                   format = "%Y-%m-%d %H:%M:%S"))
-
-#Review column names. Determine which are repetitive, etc
-colnames(SiteData)
-
-#Combine columns that are repetitive. Typically chlorophyll and TAL
-SiteData <- SiteData %>% 
-  mutate(`Chlorophyll ug/L` = coalesce(`Chlorophyll ug/L`,`Chlorophyll µg/L`)) %>% #Create combined Chl ug/L column
-  mutate(`TAL PC ug/L` = coalesce(`TAL PC ug/L`,`TAL PC µg/L`)) %>% #Create combined TAL ug/L column
-  mutate(depthFt_m = `Depth ft`*0.3048) %>% #Convert depth from feet to meters, if needed
-  mutate(`Depth m` = coalesce(`Depth m`,depthFt_m)) #Create combined Depth m column
+source("scripts/Step1_CreateList_MonthlyData.R")
 
 
+```
 
-#Drop unnecessary columns
-SiteData <- SiteData %>% 
-  select(`Date (MM/DD/YYYY)`,`Time (HH:mm:ss)`,DateTime, `Site Name`,
-         `Depth m`,
-         `Temp °C`,`SpCond µS/cm`,
-         `ODO % sat`,`ODO mg/L`,
-         `Turbidity FNU`,
-          pH,`pH mV`,
-         `Chlorophyll RFU`,`Chlorophyll ug/L`,
-         `TAL PC RFU`,`TAL PC ug/L`,
-         `fDOM QSU`,`fDOM RFU`,
-         `Battery V`)
 
-#Compare column names
-colnames(combined_data)
-colnames(SiteData)
+Step 2: Clip each monthly dataframe within list. This removes times when the sonde is out of water during deployment/retrieval 
+```{r}
+
+#Run R script: Step2_DataClipping.R
+
+source("scripts/Step2_DataClipping.R")
+
+```
+
+
+Step 3: Create a site-specific single dataframe, combining all clipped monthly datasets
+```{r}
+
+#Run R script: Step3_CombineData.R
+
+source("scripts/Step3_CombineData.R")
+
+##Use as double check when needed. Should match "combined_rawData_rbind" ##
+#combined_rawData_fulljoin <- data_list %>% 
+#  reduce(full_join)
+
+#Save list as .RDS file and Excel file
+write_rds(filtered_list, file = paste("siteData/",siteName,"_list_monthlyDataclipped.rds",sep=""))
+
+```
+
+
+Step 4: Format Dataframe (rename columns, combine duplicate columns, remove extra columns, etc)
+```{r}
+
+#Run R script: Step4_FormatDataframe.R
+
+source("scripts/Step4_FormatDataframe.R")
 
 
 ```
 
 
 
-Save as Rdata and Excel
+Step 5: Save Rdata and Excel: Clipped and Formatted Dataframe
 ```{r}
 
-#write.csv(SiteData, file = "siteData/Arnold_combo_raw.csv",row.names = FALSE)
-write_rds(SiteData, file = paste("siteData/",siteName,"_combo_raw.rds",sep=""))
+#Save RDS for Clipped/Formatted Dataframe
+write_rds(SiteData_filtered, file = paste("siteData/",siteName,"_dataframe_monthlyDataclipped.rds",sep=""))
+
+#Save CSV for Clipped/Formatted Dataframe
+write.csv(SiteData_filtered, file = paste("siteData/",siteName,"_dataframe_monthlyDataclipped.csv",sep=""),row.names = FALSE)
 
 ```
 
