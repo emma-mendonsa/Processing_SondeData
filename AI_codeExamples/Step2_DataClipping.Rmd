@@ -19,7 +19,7 @@ library(readr)
 library(readxl)
 library(dplyr)
 library(lubridate)
-
+library(fuzzyjoin)
 
 siteName <- "Arnold"
 
@@ -30,7 +30,8 @@ Import Site Data and Site visit log (dates and times)
 ```{r}
 
 SiteData <- read_rds(file = paste("siteData/",siteName,"_combo_raw.rds",sep=""))
-spans <- read_excel("span.xlsx")
+spans <- read_excel("span.xlsx", col_types = c("text", 
+    "date", "text", "text", "date", "date"))
 
 
 ```
@@ -43,13 +44,26 @@ Remove timestamps where sonde is "in air"
 #SiteData_clipped <- SiteData %>%
 #  mutate(datetime = as.POSIXct(paste(`Date (MM/DD/YYYY)`, `Time (HH:mm:ss)`), format = "%Y-%m-%d %H:%M:%S"))
 
-# for each row, test if datetime falls in any span and then remove
-SiteData_clipped <- SiteData %>%
-  rowwise() %>%
-  mutate(in_span = any(DateTime >= spans$start & DateTime <= spans$stop)) %>%
-  ungroup() %>%
-  filter(!in_span) %>%
-  select(-in_span)
+
+# 1. Convert dataframes to data.tables
+setDT(SiteData)
+setDT(spans)
+
+# 2. Find indices of points that fall INSIDE any span
+# We use which = TRUE to get row numbers instead of data
+inside_indices <- SiteData[spans, 
+                          on = .(DateTime >= start, DateTime <= stop), 
+                          which = TRUE, 
+                          nomatch = NULL]
+
+# 2b. Record of the rows that fall INSIDE any span, using the non-equi join
+# This looks for rows in df_data where 'time' is between 'start' and 'end'
+inside_clippedRows <- SiteData[spans, 
+                  on = .(DateTime <= start, DateTime >= stop), 
+                  nomatch = NULL]
+
+# 3. Filter the original data to keep only rows NOT in those indices
+SiteData_clipped <- SiteData[-(inside_indices)]
 
 ```
 
