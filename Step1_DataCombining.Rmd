@@ -17,10 +17,12 @@ library(data.table)
 library(readr)
 library(readxl)
 library(purrr)
+library(lubridate)
+library(hms)
 
-siteName <- "Arnold"
+siteName <- "LYR"
 
-monthlyData_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Arnold" 
+monthlyData_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Lower Yolo Ranch" 
 
 ```
 
@@ -59,14 +61,18 @@ source("scripts/Step3_CombineData.R")
 
 #Save list as .RDS file and Excel file
 write_rds(filtered_list, file = paste("siteData/",siteName,"_list_monthlyDataclipped.rds",sep=""))
+#Save CSV for Clipped/Formatted Dataframe
+#write.csv(combined_rawData_rbind, file = paste("siteData/",siteName,"_dataframe_monthlyDataclipped.csv",sep=""),row.names = FALSE)
+
 
 ```
 
 
-Step 4: Format Dataframe (rename columns, combine duplicate columns, remove extra columns, etc)
-```{r}
+**Manual** Step 4: Format Dataframe (rename columns, combine duplicate columns, remove extra columns, etc)
+```{r eval=FALSE, include=FALSE}
 
-#Run R script: Step4_FormatDataframe.R
+#Mannually go through this R script: Step4_FormatDataframe.R
+#This code chunk does NOT run automatically
 
 source("scripts/Step4_FormatDataframe.R")
 
@@ -76,13 +82,15 @@ source("scripts/Step4_FormatDataframe.R")
 
 
 Step 5: Save Rdata and Excel: Clipped and Formatted Dataframe
-```{r}
+```{r eval=FALSE, include=FALSE}
+
+#This code chunk does NOT run automatically
 
 #Save RDS for Clipped/Formatted Dataframe
-write_rds(SiteData_filtered, file = paste("siteData/",siteName,"_dataframe_monthlyDataclipped.rds",sep=""))
+write_rds(SiteData_filtered, file = paste("siteData/",siteName,"_dataframe_combined_formatted.rds",sep=""))
 
 #Save CSV for Clipped/Formatted Dataframe
-write.csv(SiteData_filtered, file = paste("siteData/",siteName,"_dataframe_monthlyDataclipped.csv",sep=""),row.names = FALSE)
+write.csv(SiteData_filtered, file = paste("siteData/",siteName,"_combined_formatted.csv",sep=""),row.names = FALSE)
 
 ```
 
