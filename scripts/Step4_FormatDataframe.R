@@ -10,6 +10,7 @@ if (length(u) > 1L) {
   stop(sprintf("Error: More than one site name found: %s", toString(u)))
 }
 
+#siteName2 = "Bradmoor-Exterior"
 #SiteData$`Site Name`<- siteName  #If more than one, review and adjust in excels. Possibly run this line
 
 #Review column names. Determine which are repetitive, etc
@@ -17,10 +18,10 @@ colnames(SiteData)
 
 #Combine columns that are repetitive. Typically chlorophyll and TAL
 SiteData <- SiteData %>% 
-  mutate(`Chlorophyll ug/L` = coalesce(`Chlorophyll ug/L`,`Chlorophyll µg/L`)) %>% #Create combined Chl ug/L column
-  mutate(`TAL PC ug/L` = coalesce(`TAL PC ug/L`,`TAL PC µg/L`)) #Create combined TAL ug/L column
-  #mutate(depthFt_m = `Depth ft`*0.3048) %>% #Convert depth from feet to meters, if needed
-  #mutate(`Depth m` = coalesce(`Depth m`,depthFt_m)) #Create combined Depth m column
+  #mutate(`Chlorophyll ug/L` = coalesce(`Chlorophyll ug/L`,`Chlorophyll µg/L`)) %>% #Create combined Chl ug/L column
+  #mutate(`TAL PC ug/L` = coalesce(`TAL PC ug/L`,`TAL PC µg/L`))   #Create combined TAL ug/L column
+  mutate(depthFt_m = `Depth ft`*0.3048) %>% #Convert depth from feet to meters, if needed
+  mutate(`Depth m` = coalesce(`Depth m`,depthFt_m)) #Create combined Depth m column
 
 
 #Selects only necessary columns. Drops all columns not listed below.
