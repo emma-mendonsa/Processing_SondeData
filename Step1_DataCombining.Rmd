@@ -20,15 +20,17 @@ library(purrr)
 library(lubridate)
 library(hms)
 
-siteName <- "LYR"
 
-monthlyData_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Lower Yolo Ranch" 
 
 ```
 
 
 Step 1: Import monthly datasets and Combine into a List. 
 ```{r}
+
+siteName <- "BRD-Ext"
+
+monthlyData_path <- "C:/Users/emendons/OneDrive - California Department of Water Resources/Water Quality Lab - DWR - Fish Restoration Program/Data Downloads/Bradmoor-Exterior-RETIRED" 
 
 #Run R script: Step1_CreateList_MonthlyData
 
